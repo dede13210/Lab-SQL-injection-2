@@ -9,6 +9,12 @@
 <body>
   <h1>Welcome to our E-commerce Site</h1>
 
+  <!-- Search Bar -->
+  <form action="/search" method="GET">
+    <input type="text" name="query" placeholder="Search products..." required>
+    <button type="submit">Search</button>
+  </form>
+
   <h2>Products</h2>
   <ul>
     <% products.forEach(product => { %>
@@ -19,19 +25,5 @@
       </li>
     <% }) %>
   </ul>
-
-  <h2>Add a New Product</h2>
-  <form action="/add-product" method="POST">
-    <label for="name">Product Name:</label>
-    <input type="text" id="name" name="name" required>
-    <br>
-    <label for="price">Price:</label>
-    <input type="number" id="price" name="price" required>
-    <br>
-    <label for="description">Description:</label>
-    <textarea id="description" name="description" required></textarea>
-    <br>
-    <button type="submit">Add Product</button>
-  </form>
 </body>
 </html>
