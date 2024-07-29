@@ -1,18 +1,18 @@
-const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 
-const app = express();
-const port = 3000;
+// Replace the following with your MongoDB connection string, username, and password
+const username = 'admin';
+const password = 'password';
+const host = 'localhost'; 
+const port = '27017';  
+const database = 'ecommerceDB';
+const authDatabase = 'admin';  
 
-// Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
+// Construct the connection URI
+const uri = `mongodb://${username}:${password}@${host}:${port}/${database}?authSource=${authDatabase}`;
 
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/ecommerceDB', { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-// Schema and Model
 const productSchema = new mongoose.Schema({
   name: String,
   price: Number,
@@ -21,32 +21,17 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model('Product', productSchema);
 
-// Routes
-app.get('/', (req, res) => {
-  Product.find({}, (err, products) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.render('index.ejs', { products: products });
-    }
-  });
-});
+const products = [
+  { name: "Product 1", price: 10, description: "Description for product 1" },
+  { name: "Product 2", price: 20, description: "Description for product 2" },
+  { name: "Product 3", price: 30, description: "Description for product 3" }
+];
 
-app.post('/add-product', (req, res) => {
-  const newProduct = new Product({
-    name: req.body.name,
-    price: req.body.price,
-    description: req.body.description
-  });
-  newProduct.save((err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.redirect('/');
-    }
-  });
-});
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+Product.insertMany(products, (err) => {
+  if (err) {
+    console.log(err);
+  } else {
+    console.log("Successfully inserted products into the database.");
+  }
+  mongoose.connection.close();
 });
