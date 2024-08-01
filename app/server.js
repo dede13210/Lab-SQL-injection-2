@@ -46,35 +46,49 @@ app.get('/', (req, res) => {
 });
 
 app.get('/search', (req, res) => {
-  let searchQuery = req.query.query; // Get the search keyword from the query parameter
+  let searchQuery = req.query.query;
 
+  let parsedQuery;
   try {
-    // Parse searchQuery as JSON to allow for injection
-    searchQuery = JSON.parse(searchQuery);
+    parsedQuery = JSON.parse(searchQuery);
   } catch (e) {
-    // If parsing fails, fall back to a regular expression search
-    searchQuery = { name: new RegExp(req.query.query, 'i') };
+    parsedQuery = { name: new RegExp(searchQuery, 'i') };
   }
 
-  // Ensure searchQuery is an object to avoid further errors
-  if (typeof searchQuery !== 'object') {
-    searchQuery = {};
+  if (typeof parsedQuery !== 'object') {
+    parsedQuery = {};
+  }
+  let finalQuery;
+  if (searchQuery.includes("true")) {
+    finalQuery = {
+      $or: [
+        { visible: true },
+        { $where: `this.visible === false && ${searchQuery}` }
+      ]
+    };
+  } else {
+    // Requête de recherche normale
+    finalQuery = {
+      $and: [
+        { visible: true },
+        parsedQuery
+      ]
+    };
   }
 
-  // Add a NoSQL injection-like condition: OR 1=1 to bypass visible: true
-  searchQuery = {
-    $or: [searchQuery, { visible: { $ne: true } }]
-  };
 
-  Product.find(searchQuery) // Perform the search with the potentially unsafe query
+  Product.find(finalQuery) // Effectuer la recherche avec la requête potentiellement manipulée
     .then(products => {
-      res.render('index.ejs', { products: products }); // Render the same page with the search results
+      res.render('index.ejs', { products: products }); // Rendre la même page avec les résultats de recherche
     })
     .catch(err => {
-      console.error('Error retrieving search results:', err);
-      res.status(500).send("Error retrieving products.");
+      console.error('Erreur lors de la récupération des résultats de recherche :', err);
+      res.status(500).send("Erreur lors de la récupération des produits.");
     });
 });
+
+
+
   
 
 app.listen(serverPort, () => {
