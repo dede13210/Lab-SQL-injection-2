@@ -12,5 +12,18 @@ services:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js
       - mongo-data:/data/db
 
+  nodeapp:
+    container_name: nodeapp
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URL=mongodb://admin:password@mongodb:27017/ecommerceDB?authSource=admin
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/usr/src/app
+    command: node server.js
+
 volumes:
   mongo-data:

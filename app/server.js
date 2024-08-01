@@ -12,7 +12,7 @@ app.use(express.static('public'));
 // MongoDB Connection Configuration
 const username = 'admin';
 const password = 'password';
-const host = '127.0.0.1'; 
+const host = 'mongodb'; 
 const portDB = '27017';
 const database = 'ecommerceDB';
 
@@ -33,10 +33,12 @@ const productSchema = new mongoose.Schema({
 
 const Product = mongoose.model('Product', productSchema);
 
-// Routes using Promises
+// Route for the home page with visible products filter
 app.get('/', (req, res) => {
-  Product.find({})
-    .then(products => res.render('index.ejs', { products: products }))
+  Product.find({ visible: true }) // Only fetch products where visible is true
+    .then(products => {
+      res.render('index.ejs', { products: products });
+    })
     .catch(err => {
       console.error('Error retrieving products:', err);
       res.status(500).send("Error retrieving products.");
@@ -44,16 +46,35 @@ app.get('/', (req, res) => {
 });
 
 app.get('/search', (req, res) => {
-    const searchQuery = req.query.query; // Get the search keyword from the query parameter
-    Product.find({ name: new RegExp(searchQuery, 'i') }) // Search for products with a case-insensitive match
-      .then(products => {
-        res.render('index.ejs', { products: products }); // Render the same page with the search results
-      })
-      .catch(err => {
-        console.error('Error retrieving search results:', err);
-        res.status(500).send("Error retrieving products.");
-      });
-  });
+  let searchQuery = req.query.query; // Get the search keyword from the query parameter
+
+  try {
+    // Parse searchQuery as JSON to allow for injection
+    searchQuery = JSON.parse(searchQuery);
+  } catch (e) {
+    // If parsing fails, fall back to a regular expression search
+    searchQuery = { name: new RegExp(req.query.query, 'i') };
+  }
+
+  // Ensure searchQuery is an object to avoid further errors
+  if (typeof searchQuery !== 'object') {
+    searchQuery = {};
+  }
+
+  // Add a NoSQL injection-like condition: OR 1=1 to bypass visible: true
+  searchQuery = {
+    $or: [searchQuery, { visible: { $ne: true } }]
+  };
+
+  Product.find(searchQuery) // Perform the search with the potentially unsafe query
+    .then(products => {
+      res.render('index.ejs', { products: products }); // Render the same page with the search results
+    })
+    .catch(err => {
+      console.error('Error retrieving search results:', err);
+      res.status(500).send("Error retrieving products.");
+    });
+});
   
 
 app.listen(serverPort, () => {

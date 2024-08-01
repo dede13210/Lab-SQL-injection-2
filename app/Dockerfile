@@ -1,13 +1,20 @@
-# Use the official MongoDB image
-FROM mongo:latest
+# Utilise une image officielle de Node.js
+FROM node:20
 
-# Set environment variables
-ENV MONGO_INITDB_DATABASE=ecommerceDB
-ENV MONGO_INITDB_ROOT_USERNAME=admin
-ENV MONGO_INITDB_ROOT_PASSWORD=password
+# Crée un répertoire de travail dans le conteneur
+WORKDIR /usr/src/app
 
-# Copy the initialization script
-COPY init-mongo.js /docker-entrypoint-initdb.d/
+# Copie package.json et package-lock.json
+COPY package*.json ./
 
-# Expose port 27017
-EXPOSE 27017
+# Installe les dépendances de l'application
+RUN npm install
+
+# Copie le reste du code de l'application
+COPY . .
+
+# Expose le port que l'application utilise
+EXPOSE 3000
+
+# Commande pour lancer l'application
+CMD [ "npm", "start" ]
